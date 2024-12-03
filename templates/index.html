@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Mood Board Generator</title>
+    <!-- Include Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <style>
+        /* Existing styles */
+        #board {
+            width: 1200px;
+            height: 900px;
+            margin: 20px auto;
+            position: relative;
+            background-color: #fff;
+            border: 2px dashed #aaa;
+            overflow: hidden;
+        }
+        .draggable {
+            position: absolute;
+            cursor: move;
+        }
+        .draggable img {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+        }
+        .draggable .text {
+            font-size: 24px;
+            color: #000;
+        }
+        #drawing-canvas {
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white text-center">
+    <h1 class="text-3xl font-bold mt-8">Mood Board Generator</h1>
+    <div class="mt-4">
+        <button id="generate-btn" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Generate Mood Board</button>
+        <input type="checkbox" id="draw-toggle" class="ml-4">
+        <label for="draw-toggle" class="ml-2">Enable Drawing</label>
+        <input type="color" id="color-picker" value="#ff0000" class="ml-4">
+        <input type="range" id="brush-size" min="1" max="10" value="5" class="ml-2">
+        <label for="brush-size" class="ml-2">Brush Size</label>
+    </div>
+    <div class="mt-4">
+        <button id="screenshot-btn" class="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600">Save Board</button>
+        <button id="clear-btn" class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 ml-4">Clear Board</button>
+    </div>
+    <div class="mt-4">
+        <input type="text" id="text-input" placeholder="Enter text" class="px-2 py-1 rounded text-black" />
+        <button id="add-text-btn" class="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">Add Text</button>
+    </div>
+    <div id="board">
+        <canvas id="drawing-canvas" width="1200" height="900"></canvas>
+    </div>
+
+    <a href="/slot" class="fixed bottom-2 right-2 text-gray-700 hover:text-gray-500 text-xs opacity-20 hover:opacity-50 transition-opacity">
+        🎰
+    </a>
+
+    <script>
+        // JavaScript Code
+        const images = [
+            "../static/images/image1.jpg",
+            "../static/images/image2.jpg",
+            "../static/images/image3.jpg",
+            "../static/images/image4.jpg",
+            "../static/images/image5.jpg",
+            "../static/images/image6.jpg",
+            "../static/images/image7.jpg",
+            "../static/images/image8.jpg",
+            "../static/images/image9.jpg",
+            "../static/images/image10.jpg"
+        ];
+        const generateBtn = document.getElementById('generate-btn');
+        const addTextBtn = document.getElementById('add-text-btn');
+        const textInput = document.getElementById('text-input');
+        const board = document.getElementById('board');
+        const canvas = document.getElementById('drawing-canvas');
+        const ctx = canvas.getContext('2d');
+        const colorPicker = document.getElementById('color-picker');
+        const brushSize = document.getElementById('brush-size');
+        const drawToggle = document.getElementById('draw-toggle');
+
+        let drawing = false;
+        let lastX = 0;
+        let lastY = 0;
+
+        function makeDraggable(element) {
+            element.onmousedown = function(event) {
+                event.preventDefault();
+                let shiftX = event.clientX - element.getBoundingClientRect().left;
+                let shiftY = event.clientY - element.getBoundingClientRect().top;
+        
+                function moveAt(pageX, pageY) {
+                    element.style.left = pageX - shiftX - board.getBoundingClientRect().left + 'px';
+                    element.style.top = pageY - shiftY - board.getBoundingClientRect().top + 'px';
+                }
+        
+                function onMouseMove(event) {
+                    moveAt(event.pageX, event.pageY);
+                }
+        
+                // Add mousemove
+                document.addEventListener('mousemove', onMouseMove);
+        
+                // Add mouseup to document instead of element
+                function onMouseUp() {
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                }
+                document.addEventListener('mouseup', onMouseUp);
+            };
+        
+            element.ondragstart = function() {
+                return false;
+            };
+        }
+
+        generateBtn.addEventListener('click', () => {
+            // Clear existing content except canvas
+            const elements = board.querySelectorAll('.draggable');
+            elements.forEach(el => el.remove());
+
+            // Randomly select images
+            const selectedImages = images.sort(() => 0.5 - Math.random()).slice(0, 4);
+
+            // Display images
+            selectedImages.forEach(src => {
+                const imgContainer = document.createElement('div');
+                imgContainer.classList.add('draggable');
+                imgContainer.style.left = `${Math.random() * (board.clientWidth - 150)}px`;
+                imgContainer.style.top = `${Math.random() * (board.clientHeight - 150)}px`;
+
+                const img = document.createElement('img');
+                img.src = src;
+
+                imgContainer.appendChild(img);
+                board.appendChild(imgContainer);
+
+                // Make the image draggable
+                makeDraggable(imgContainer);
+            });
+        });
+
+        addTextBtn.addEventListener('click', () => {
+            const textValue = textInput.value.trim();
+            if (textValue) {
+                const textContainer = document.createElement('div');
+                textContainer.classList.add('draggable');
+                textContainer.style.left = `${Math.random() * (board.clientWidth - 100)}px`;
+                textContainer.style.top = `${Math.random() * (board.clientHeight - 30)}px`;
+
+                const textElement = document.createElement('div');
+                textElement.classList.add('text');
+                textElement.textContent = textValue;
+
+                textContainer.appendChild(textElement);
+                board.appendChild(textContainer);
+
+                // Make the text draggable
+                makeDraggable(textContainer);
+
+                // Clear the input field
+                textInput.value = '';
+            }
+        });
+
+        // Drawing functionality with toggle
+        canvas.addEventListener('mousedown', (e) => {
+            if (!drawToggle.checked) return;
+            drawing = true;
+            [lastX, lastY] = [e.offsetX, e.offsetY];
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!drawing) return;
+            ctx.strokeStyle = colorPicker.value;
+            ctx.lineWidth = brushSize.value;
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(e.offsetX, e.offsetY);
+            ctx.stroke();
+            [lastX, lastY] = [e.offsetX, e.offsetY];
+        });
+
+        canvas.addEventListener('mouseup', () => drawing = false);
+        canvas.addEventListener('mouseout', () => drawing = false);
+
+        // Screenshot functionality
+        const screenshotBtn = document.getElementById('screenshot-btn');
+
+        screenshotBtn.addEventListener('click', () => {
+            html2canvas(board).then(canvas => {
+                // Create temporary link
+                const link = document.createElement('a');
+                link.download = 'mood-board.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        });
+
+        // Clear board functionality
+        const clearBtn = document.getElementById('clear-btn');
+    
+        clearBtn.addEventListener('click', () => {
+            // Remove all draggable elements
+            const elements = board.querySelectorAll('.draggable');
+            elements.forEach(el => el.remove());
+            
+            // Clear the canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        });
+    </script>
+</body>
+</html>
