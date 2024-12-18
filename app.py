@@ -1,5 +1,7 @@
 from flask import Flask, render_template
 from flask_sqlalchemy import SQLAlchemy
+import os
+from flask import jsonify
 
 application = Flask(__name__)
 application.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///spins.db'
@@ -10,9 +12,19 @@ class SpinCounter(db.Model):
     count = db.Column(db.Integer, default=0)
     wins = db.Column(db.Integer, default=0)
 
+
 @application.route('/')
 def index():
     return render_template('index.html')
+
+@application.route('/get_images')
+def get_images():
+    image_dir = os.path.join(application.static_folder, 'images')
+    images = []
+    for filename in os.listdir(image_dir):
+        if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+            images.append(f"/static/images/{filename}")
+    return jsonify(images)
 
 @application.route('/slot')
 def slot():
